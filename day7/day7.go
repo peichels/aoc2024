@@ -2,16 +2,17 @@ package day7
 
 import (
 	"fmt"
-	"github.com/peichels/aoc2024/input"
 	"log"
 	"math"
 	"strconv"
 	"strings"
+
+	"github.com/peichels/aoc2024/input"
 )
 
 type line struct {
-	outcome uint64
-	numbers []int32
+	outcome int
+	numbers []int
 }
 
 func GetSolutionPart1() (uint64, error) {
@@ -26,10 +27,10 @@ func GetSolutionPart1() (uint64, error) {
 	for _, lineString := range inputData {
 		outcome, _ := strconv.Atoi(strings.Split(lineString, ":")[0])
 		numbers := strings.Split(lineString, " ")[1:]
-		var numbersInt []int32
+		var numbersInt []int
 		for _, number := range numbers {
 			numberInt, _ := strconv.Atoi(number)
-			numbersInt = append(numbersInt, int32(numberInt))
+			numbersInt = append(numbersInt, numberInt)
 		}
 		//timesTotal := 1
 		//addTotal := 0
@@ -48,17 +49,17 @@ func GetSolutionPart1() (uint64, error) {
 		//	unreachableLines = append(unreachableLines, line{uint64(outcome), numbersInt})
 		//	continue
 		//}
-		lines = append(lines, line{uint64(outcome), numbersInt})
+		lines = append(lines, line{outcome, numbersInt})
 
 	}
 
 	for _, line := range lines {
-		permutations := math.Pow(2, float64(len(line.numbers)-1))
+		permutations := int(math.Pow(2, float64(len(line.numbers)-1)))
 		fmt.Println(line.numbers)
 		fmt.Println("Permutations: ", permutations)
 
 		// iterate over all permutations
-		for perm := range int(permutations) {
+		for perm := range permutations {
 
 			for index, number := range line.numbers {
 				if index == 0 {
@@ -76,7 +77,7 @@ func GetSolutionPart1() (uint64, error) {
 				}
 
 			}
-			if total == line.outcome {
+			if total == uint64(line.outcome) {
 				fmt.Println(" == ", total)
 				result += total
 				break
@@ -106,11 +107,62 @@ func GetSolutionPart1() (uint64, error) {
 }
 
 func GetSolutionPart2() (uint64, error) {
-	_, err := input.ReadInputFileAsStringList("./input/files/day5_1.txt")
+	inputData, err := input.ReadInputFileAsStringList("./input/files/day7_1.txt")
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}
-	var total uint64 = 0
+	total := 0
 
-	return total, nil
+	var lines []line
+	//var unreachableLines []line
+	for _, lineString := range inputData {
+		outcome, _ := strconv.Atoi(strings.Split(lineString, ":")[0])
+		numbers := strings.Split(lineString, " ")[1:]
+		var numbersInt []int
+		for _, number := range numbers {
+			numberInt, _ := strconv.Atoi(number)
+			numbersInt = append(numbersInt, numberInt)
+		}
+		lines = append(lines, line{outcome, numbersInt})
+	}
+
+	for _, line := range lines {
+		if canProduceOutcome(line.numbers, int(line.outcome)) {
+			total += int(line.outcome)
+		}
+	}
+
+	return uint64(total), nil
+}
+
+func canProduceOutcome(nums []int, Outcome int) bool {
+	operators := []string{"+", "*", "||"}
+	return evaluate(nums, operators, 0, Outcome, nums[0])
+}
+
+func evaluate(nums []int, operators []string, index, Outcome, current int) bool {
+	if index == len(nums)-1 {
+		return current == Outcome
+	}
+	for _, op := range operators {
+		next := nums[index+1]
+		newCurrent := current
+		switch op {
+		case "+":
+			newCurrent += next
+		case "*":
+			newCurrent *= next
+		case "||":
+			newCurrent = concat(current, next)
+		}
+		if evaluate(nums, operators, index+1, Outcome, newCurrent) {
+			return true
+		}
+	}
+	return false
+}
+
+func concat(a, b int) int {
+	ab, _ := strconv.Atoi(fmt.Sprintf("%d%d", a, b))
+	return ab
 }
